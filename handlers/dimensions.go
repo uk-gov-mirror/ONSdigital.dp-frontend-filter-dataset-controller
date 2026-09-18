@@ -366,9 +366,9 @@ func (f *Filter) addAll(w http.ResponseWriter, req *http.Request, redirectURL, u
 
 	// function to add each batch of dataset dimension options to filter API
 	processBatch := func(batch dataset.Options) (forceAbort bool, err error) {
-		var options []string
+		options := make([]string, len(batch.Items))
 		for i := range batch.Items {
-			options = append(options, batch.Items[i].Option)
+			options[i] = batch.Items[i].Option
 		}
 		// first batch, will overwrite any existing values in filter API
 		if batch.Offset == 0 {

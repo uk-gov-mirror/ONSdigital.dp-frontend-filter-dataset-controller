@@ -76,42 +76,45 @@ func CreateFilterOverview(req *http.Request, bp core.Page, dimensions []filter.M
 	p.EmergencyBanner = mapEmergencyBanner(emergencyBannerContent)
 	p.FeatureFlags.FeedbackAPIURL = cfg.FeedbackAPIURL
 
-	for i := range dimensions {
+	for index := range dimensions {
+		dimension := &dimensions[index]
 		var fod model.Dimension
 
-		if dimensions[i].Name == strTime {
-			for j := range datasetDims {
-				if datasetDims[j].Name == dimensions[i].Name {
-					fod.Filter = helpers.TitleCaseStr(datasetDims[j].Name)
-					if datasetDims[j].Label != "" {
-						fod.Filter = datasetDims[j].Label
+		if dimension.Name == strTime {
+			for index := range datasetDims {
+				datasetDim := &datasetDims[index]
+				if datasetDim.Name == dimension.Name {
+					fod.Filter = helpers.TitleCaseStr(datasetDim.Name)
+					if datasetDim.Label != "" {
+						fod.Filter = datasetDim.Label
 					}
 				}
 			}
 
-			times, err := dates.ConvertToReadable(dimensions[i].Values)
+			times, err := dates.ConvertToReadable(dimension.Values)
 			if err != nil {
 				log.Warn(ctx, "unable to convert dates to human readable values", log.FormatErrors([]error{err}))
-				fod.AddedCategories = append(fod.AddedCategories, dimensions[i].Values...)
+				fod.AddedCategories = append(fod.AddedCategories, dimension.Values...)
 			}
 
 			for _, time := range times {
 				fod.AddedCategories = append(fod.AddedCategories, time.Format("January 2006"))
 			}
 		} else {
-			fod.AddedCategories = append(fod.AddedCategories, dimensions[i].Values...)
+			fod.AddedCategories = append(fod.AddedCategories, dimension.Values...)
 
-			for j := range datasetDims {
-				if datasetDims[j].Name == dimensions[i].Name {
-					fod.Filter = helpers.TitleCaseStr(datasetDims[j].Name)
-					if datasetDims[j].Label != "" {
-						fod.Filter = datasetDims[j].Label
+			for index := range datasetDims {
+				datasetDim := &datasetDims[index]
+				if datasetDim.Name == dimension.Name {
+					fod.Filter = helpers.TitleCaseStr(datasetDim.Name)
+					if datasetDim.Label != "" {
+						fod.Filter = datasetDim.Label
 					}
 				}
 			}
 		}
 
-		fod.Link.URL = fmt.Sprintf("/filters/%s/dimensions/%s", filterID, dimensions[i].Name)
+		fod.Link.URL = fmt.Sprintf("/filters/%s/dimensions/%s", filterID, dimension.Name)
 
 		if len(fod.AddedCategories) > 0 {
 			fod.Link.Label = "Edit"
@@ -244,15 +247,15 @@ func CreateListSelectorPage(req *http.Request, bp core.Page, name string, select
 
 	lookup := getIDNameLookup(allValues)
 
-	selectedListValues := []string{}
-	for _, opt := range selectedValues {
-		selectedListValues = append(selectedListValues, lookup[opt.Option])
+	selectedListValues := make([]string, len(selectedValues))
+	for i, opt := range selectedValues {
+		selectedListValues[i] = lookup[opt.Option]
 	}
 
-	allListValues := []string{}
+	allListValues := make([]string, len(allValues.Items))
 	valueIDmap := make(map[string]string)
 	for i := range allValues.Items {
-		allListValues = append(allListValues, allValues.Items[i].Label)
+		allListValues[i] = allValues.Items[i].Label
 		valueIDmap[allValues.Items[i].Label] = allValues.Items[i].Option
 	}
 
@@ -393,9 +396,8 @@ func getIDNameLookup(vals dataset.Options) map[string]string {
 }
 
 // CreateAgePage creates an age selector page based on api responses
-// TODO: refactor to reduce complexity
 //
-//nolint:gocyclo // cyclomatic complexity 27
+//nolint:gocognit,gocyclo // cyclomatic and cognitive complexity is not in scope to fix
 func CreateAgePage(req *http.Request, bp core.Page, f filter.Model, d dataset.DatasetDetails, allVals dataset.Options, selVals filter.DimensionOptions, dims dataset.VersionDimensions, datasetID, apiRouterVersion, lang, serviceMessage string, emergencyBannerContent zebedee.EmergencyBanner) (model.Age, error) {
 	p := model.Age{
 		Page: bp,
@@ -546,9 +548,8 @@ func CreateAgePage(req *http.Request, bp core.Page, f filter.Model, d dataset.Da
 }
 
 // CreateTimePage will create a time selector page based on api response models
-// TODO: refactor to reduce complexity
 //
-//nolint:gocyclo // cyclomatic complexity 36
+//nolint:gocognit,gocyclo // cognitive and cyclomatic complexity is not in scope to fix
 func CreateTimePage(req *http.Request, bp core.Page, f filter.Model, d dataset.DatasetDetails, allVals dataset.Options, selVals []filter.DimensionOption, dims dataset.VersionDimensions, datasetID, apiRouterVersion, lang, serviceMessage string, emergencyBannerContent zebedee.EmergencyBanner) (model.Time, error) {
 	p := model.Time{
 		Page: bp,
@@ -662,7 +663,7 @@ func CreateTimePage(req *http.Request, bp core.Page, f filter.Model, d dataset.D
 		for _, selVal := range selVals {
 			if val.Format("Jan-06") == selVal.Option {
 				isSelected = true
-				if val == sortedTimes[len(sortedTimes)-1] {
+				if val.Equal(sortedTimes[len(sortedTimes)-1]) {
 					latestSelected = true
 				}
 			}
@@ -684,6 +685,7 @@ func CreateTimePage(req *http.Request, bp core.Page, f filter.Model, d dataset.D
 		p.Data.CheckedRadio = latest
 	} else if len(selVals) == 1 {
 		p.Data.CheckedRadio = single
+		//nolint:gosec // G602: len(selVals) == 1 guarantees index 0 exists.
 		date, err := time.Parse("Jan-06", selVals[0].Option)
 		if err != nil {
 			log.Warn(ctx, "unable to parse date", log.FormatErrors([]error{err}))
@@ -935,9 +937,8 @@ func CreateHierarchySearchPage(req *http.Request, bp core.Page, items []search.I
 }
 
 // CreateHierarchyPage maps data items from API responses to form a hierarchy page
-// TODO: refactor to reduce complexity
 //
-//nolint:gocyclo // cyclomatic complexity 26
+//nolint:gocognit,gocyclo // cognitive and cyclomatic complexity is not in scope to fix
 func CreateHierarchyPage(req *http.Request, bp core.Page, h hierarchyClient.Model, dst dataset.DatasetDetails, f filter.Model, selectedValueLabels map[string]string, dims dataset.VersionDimensions, name, curPath, datasetID, apiRouterVersion, lang, serviceMessage string, emergencyBannerContent zebedee.EmergencyBanner) model.Hierarchy {
 	p := model.Hierarchy{
 		Page: bp,
@@ -1144,7 +1145,7 @@ func mapEmergencyBanner(bannerData zebedee.EmergencyBanner) core.EmergencyBanner
 	emptyBannerObj := zebedee.EmergencyBanner{}
 	if bannerData != emptyBannerObj {
 		mappedEmergencyBanner.Title = bannerData.Title
-		mappedEmergencyBanner.Type = strings.Replace(bannerData.Type, "_", "-", -1)
+		mappedEmergencyBanner.Type = strings.ReplaceAll(bannerData.Type, "_", "-")
 		mappedEmergencyBanner.Description = bannerData.Description
 		mappedEmergencyBanner.URI = bannerData.URI
 		mappedEmergencyBanner.LinkText = bannerData.LinkText

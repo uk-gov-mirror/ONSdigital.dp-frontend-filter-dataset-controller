@@ -84,6 +84,7 @@ func ReturnSecondSegmentFromPath(path string) (secondSegment string, err error) 
 
 func CreateReverseProxy(proxyName string, proxyURL *url.URL) http.Handler {
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
+	//nolint:staticcheck // SA1019: legacy reverse proxy implementation. Migration to Rewrite is out of scope.
 	director := proxy.Director
 	proxy.Transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -96,6 +97,7 @@ func CreateReverseProxy(proxyName string, proxyURL *url.URL) http.Handler {
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
+	//nolint:staticcheck // SA1019: legacy reverse proxy implementation. Migration to Rewrite is out of scope.
 	proxy.Director = func(req *http.Request) {
 		log.Info(req.Context(), "proxying request", log.HTTP(req, 0, 0, nil, nil), log.Data{
 			"destination": proxyURL,

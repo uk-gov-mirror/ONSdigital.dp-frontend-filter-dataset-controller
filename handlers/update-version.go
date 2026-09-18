@@ -96,9 +96,9 @@ func (f *Filter) UseLatest() http.HandlerFunc {
 func (f *Filter) batchAddOptions(ctx context.Context, userAccessToken, collectionID, filterID, dimensionName, initialETag string) filter.DimensionOptionsBatchProcessor {
 	currentETag := initialETag
 	return func(batch filter.DimensionOptions, oldFilterETag string) (forceAbort bool, err error) {
-		var vals []string
-		for _, val := range batch.Items {
-			vals = append(vals, val.Option)
+		vals := make([]string, len(batch.Items))
+		for i, val := range batch.Items {
+			vals[i] = val.Option
 		}
 		currentETag, err = f.FilterClient.PatchDimensionValues(ctx, userAccessToken, "", collectionID, filterID, dimensionName, vals, []string{}, f.BatchSize, currentETag)
 		return false, err

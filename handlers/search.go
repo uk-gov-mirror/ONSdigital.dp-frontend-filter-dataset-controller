@@ -110,6 +110,8 @@ func (f *Filter) Search() http.HandlerFunc {
 }
 
 // SearchUpdate will update a dimension based on selected search results
+//
+//nolint:gocognit // cognitive complexity is not in scope to be reduced
 func (f *Filter) SearchUpdate() http.HandlerFunc {
 	return dphandlers.ControllerHandler(func(w http.ResponseWriter, req *http.Request, lang, collectionID, userAccessToken string) {
 		ctx := req.Context()

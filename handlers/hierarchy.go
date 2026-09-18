@@ -391,6 +391,8 @@ func (n *flatNodes) sort() {
 
 // Flatten the geography hierarchy - please note this will only work for this particular hierarchy,
 // need helper functions for other geog hierarchies too.
+//
+//nolint:gocognit // cognitive complexity is not in scope to be reduced
 func (f *Filter) flattenGeographyTopLevel(ctx context.Context, instanceID string) (h hierarchy.Model, err error) {
 	// obtain root element
 	root, err := f.HierarchyClient.GetRoot(ctx, instanceID, geography)
